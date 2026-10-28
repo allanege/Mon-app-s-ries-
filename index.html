@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a12">
+<title>Série Studio — Court-métrage IA</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+--bg:#0a0a12;--bg2:#12121c;--bg3:#1a1a28;
+--panel:#16161f;--border:#2a2a3a;
+--ink:#e8e6e0;--dim:#8a8896;--faint:#4a4858;
+--acc:#e5c15a;--acc2:#e87b35;
+--ok:#4a9d6a;--err:#c85a4a;--warn:#d4a017;
+--r:8px;--fs:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+--fm:ui-monospace,'SF Mono',Menlo,monospace;
+}
+html,body{background:var(--bg);overscroll-behavior:none}
+body{font-family:var(--fs);background:var(--bg);color:var(--ink);min-height:100vh;padding:1rem .8rem 8rem;font-size:15px;line-height:1.5;max-width:500px;margin:0 auto}
+header{text-align:center;padding:.8rem 0 1.2rem;border-bottom:1px solid var(--border);margin-bottom:1rem}
+h1{font-size:1.4rem;font-weight:300;background:linear-gradient(135deg,var(--acc2),var(--acc));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{font-size:.78rem;color:var(--dim);margin-top:.2rem}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:.8rem}
+.panel.ok{box-shadow:inset 3px 0 0 var(--ok)}
+.label{display:block;font-size:.68rem;color:var(--dim);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.1em;font-weight:600}
+input[type=password],textarea{width:100%;padding:.7rem .8rem;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--ink);font-family:var(--fm);font-size:.78rem;margin-bottom:.5rem}
+textarea{font-family:var(--fs);font-size:.85rem;min-height:70px;resize:vertical}
+input:focus,textarea:focus{outline:none;border-color:var(--acc)}
+.btn{width:100%;padding:.9rem;border-radius:var(--r);border:1px solid var(--border);background:var(--bg2);color:var(--ink);font-size:.85rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;margin-bottom:.5rem;font-family:inherit}
+.btn:active{background:var(--bg3)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-primary{border-color:var(--acc);background:linear-gradient(135deg,rgba(232,123,53,.15),rgba(229,193,90,.1));color:var(--acc);font-size:.95rem;padding:1rem;letter-spacing:.15em}
+.btn-stop{border-color:var(--err);color:var(--err);background:transparent;display:none}
+.btn-stop.visible{display:block}
+.status{font-size:.72rem;padding:.5rem .7rem;border-radius:6px;margin-bottom:.4rem;display:flex;align-items:center;gap:.5rem;background:var(--bg2);color:var(--dim);border:1px solid var(--border)}
+.status.ok{background:rgba(74,157,106,.08);color:var(--ok);border-color:rgba(74,157,106,.3)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--faint);flex-shrink:0}
+.status.ok .dot{background:var(--ok)}
+.hint{font-size:.68rem;color:var(--dim);margin-top:.4rem}
+.hint a{color:var(--acc);text-decoration:none}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);margin-bottom:.8rem;overflow:hidden}
+.section-header{padding:.8rem 1rem;cursor:pointer;user-select:none;display:flex;justify-content:space-between;align-items:center}
+.section-title{font-size:.78rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ink);font-weight:600;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
+.badge{display:inline-block;padding:.1rem .4rem;color:var(--acc);border:1px solid var(--border);border-radius:2px;font-size:.55rem;letter-spacing:.08em;font-weight:600}
+.chevron{font-size:.65rem;color:var(--faint);transition:transform .3s}
+.section.open .chevron{transform:rotate(180deg);color:var(--acc)}
+.section-body{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.section.open .section-body{max-height:3000px}
+.section-content{padding:0 1rem 1rem}
+.ref-drop{border:2px dashed var(--border);border-radius:var(--r);padding:1.2rem .8rem;background:var(--bg2);text-align:center;cursor:pointer;position:relative}
+.ref-drop:active{border-color:var(--acc);background:rgba(229,193,90,.03)}
+.ref-drop.has-image{padding:0;border-style:solid;border-color:var(--acc)}
+.ref-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.ref-drop .ref-icon{font-size:1.8rem;opacity:.5;margin-bottom:.3rem}
+.ref-drop .ref-text{font-size:.8rem;color:var(--dim)}
+.ref-drop .ref-hint{font-size:.65rem;color:var(--faint);margin-top:.3rem}
+.ref-preview{position:relative;display:block;width:100%;max-height:240px;overflow:hidden}
+.ref-preview img{width:100%;height:auto;display:block;max-height:240px;object-fit:contain;background:#000}
+.ref-preview .ref-remove{position:absolute;top:.4rem;right:.4rem;background:rgba(200,90,74,.85);color:#fff;border:none;width:28px;height:28px;border-radius:50%;font-size:.9rem;cursor:pointer}
+.style-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-top:.4rem}
+.style-card{padding:.7rem .3rem;border-radius:6px;border:1px solid var(--border);background:var(--bg2);text-align:center;cursor:pointer;transition:all .15s}
+.style-card:active{transform:scale(.97)}
+.style-card.selected{border-color:var(--acc);background:rgba(229,193,90,.08)}
+.style-card .style-emoji{font-size:1.3rem;display:block;margin-bottom:.2rem}
+.style-card .style-name{font-size:.7rem;font-weight:600;color:var(--dim)}
+.style-card.selected .style-name{color:var(--acc)}
+.row{margin-bottom:.7rem}
+select{width:100%;padding:.7rem .8rem;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--ink);font-size:.82rem;appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23e5c15a' d='M0 0l5 6 5-6z'/></svg>");background-repeat:no-repeat;background-position:right .8rem center;background-size:10px;font-family:inherit}
+select:focus{outline:none;border-color:var(--acc)}
+.scene-list{display:flex;flex-direction:column;gap:.6rem;margin-top:.6rem}
+.scene-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:border-color .3s}
+.scene-card.generating{border-color:var(--acc)}
+.scene-card.done{border-color:var(--ok)}
+.scene-card.error{border-color:var(--err)}
+.scene-header{padding:.5rem .7rem;font-size:.68rem;font-family:var(--fm);color:var(--dim);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.scene-body{padding:.6rem}
+.scene-body video{width:100%;border-radius:4px;background:#000;display:block}
+.scene-placeholder{width:100%;aspect-ratio:9/16;background:var(--bg);border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--faint);font-size:.7rem;font-family:var(--fm);flex-direction:column;gap:.4rem;text-align:center;padding:.5rem}
+.spinner-mini{width:14px;height:14px;border:2px solid rgba(229,193,90,.2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.player-overlay{position:fixed;inset:0;background:#000;z-index:2000;display:none;align-items:center;justify-content:center;cursor:pointer}
+.player-overlay.visible{display:flex}
+#player-canvas{display:block;max-width:100vw;max-height:100vh;background:#000}
+.player-hint{position:absolute;bottom:1.2rem;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.5);font-size:.7rem;font-family:var(--fm);letter-spacing:.1em;pointer-events:none;background:rgba(0,0,0,.4);padding:.3rem .7rem;border-radius:3px}
+.player-hint.hidden{opacity:0}
+.toast{position:fixed;top:1rem;left:50%;transform:translateX(-50%) translateY(-120px);background:var(--bg3);color:var(--ink);border:1px solid var(--border);border-left:3px solid var(--acc);padding:.7rem 1.2rem;border-radius:var(--r);font-size:.8rem;box-shadow:0 8px 32px rgba(0,0,0,.6);z-index:1000;opacity:0;transition:transform .3s,opacity .3s;max-width:90vw;text-align:center;display:flex;align-items:center;gap:.5rem}
+.toast.visible{transform:translateX(-50%) translateY(0);opacity:1}
+.toast.success{border-left-color:var(--ok)}
+.toast.error{border-left-color:var(--err)}
+.toast.warn{border-left-color:var(--warn)}
+.status-bar{position:fixed;bottom:0;left:0;right:0;background:var(--bg3);border-top:1px solid var(--border);color:var(--ink);padding:.7rem 1rem;font-size:.75rem;display:flex;align-items:center;gap:.6rem;transform:translateY(100%);transition:transform .3s;z-index:100;font-family:var(--fm)}
+.status-bar.visible{transform:translateY(0)}
+.spinner{width:12px;height:12px;border:2px solid rgba(229,193,90,.2);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+.debug-panel{position:fixed;bottom:0;left:0;right:0;height:180px;background:#05050a;border-top:2px solid var(--acc);z-index:200;display:flex;flex-direction:column;font-family:var(--fm);transition:height .3s}
+.debug-panel.collapsed{height:36px}
+.debug-header{display:flex;justify-content:space-between;align-items:center;padding:.4rem .7rem;background:linear-gradient(90deg,#0f0f18,#1a1a28);border-bottom:1px solid var(--border);flex-shrink:0;cursor:pointer;user-select:none}
+.debug-title{font-size:.65rem;color:var(--acc);letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+.debug-actions{display:flex;gap:.3rem}
+.debug-actions button{background:transparent;border:1px solid var(--border);color:var(--dim);font-size:.55rem;padding:.2rem .45rem;border-radius:2px;cursor:pointer;font-family:inherit}
+.debug-body{flex:1;overflow-y:auto;padding:.4rem .6rem .8rem;font-size:.65rem;line-height:1.4;color:#c8c8d0}
+.debug-entry{margin-bottom:.2rem;padding:.15rem .3rem;border-left:2px solid transparent;word-break:break-word}
+.debug-entry.info{border-left-color:var(--faint)}
+.debug-entry.success{border-left-color:var(--ok)}
+.debug-entry.warn{border-left-color:var(--warn)}
+.debug-entry.error{border-left-color:var(--err);color:#f0a0a0}
+.debug-entry.api{border-left-color:var(--acc)}
+.debug-time{color:var(--faint);margin-right:.4rem;font-size:.58rem}
+.debug-cat{color:var(--acc);font-weight:600;margin-right:.3rem;font-size:.58rem}
+.hidden{display:none!important}
+@media(max-width:380px){.style-grid{grid-template-columns:1fr 1fr 1fr}}
+</style>
+</head>
+<body>
+
+<header>
+<h1>Série Studio</h1>
+<p class="subtitle">Image + prompt → court-métrage animé</p>
+</header>
+
+<!-- API KEY -->
+<div class="panel" id="api-panel">
+<label class="label">🔑 Clé API Agnes</label>
+<input type="password" id="api-key-input" placeholder="sk-..." autocomplete="off" spellcheck="false">
+<button type="button" class="btn" id="api-save-btn">Enregistrer</button>
+<div class="status" id="api-status-line"><span class="dot"></span><span id="api-status-text">Aucune clé enregistrée</span></div>
+<div class="hint">Clé gratuite sur <a href="https://platform.agnes-ai.com" target="_blank">platform.agnes-ai.com</a></div>
+</div>
+
+<!-- ÉTAPE 1 : IMAGE DE RÉFÉRENCE -->
+<div class="section open" id="section-ref">
+<div class="section-header" data-toggle="section-ref">
+<span class="section-title">🖼️ Image de référence <span class="badge">obligatoire</span></span>
+<span class="chevron">▼</span>
+</div>
+<div class="section-body"><div class="section-content">
+<div class="ref-drop" id="ref-drop">
+<input type="file" accept="image/*" id="ref-image-input">
+<div class="ref-icon">📷</div>
+<div class="ref-text"><strong>Choisir une image</strong><br>Personnage, décor ou photo de départ</div>
+<div class="ref-hint">Cette image sera la première scène du court-métrage.</div>
+</div>
+</div></div>
+</div>
+
+<!-- ÉTAPE 2 : STYLE -->
+<div class="section open" id="section-style">
+<div class="section-header" data-toggle="section-style">
+<span class="section-title">🎨 Style visuel</span>
+<span class="chevron">▼</span>
+</div>
+<div class="section-body"><div class="section-content">
+<div class="style-grid" id="style-grid">
+<div class="style-card selected" data-style="anime"><span class="style-emoji">🌿</span><span class="style-name">Animé</span></div>
+<div class="style-card" data-style="manga"><span class="style-emoji">🖤</span><span class="style-name">Manga</span></div>
+<div class="style-card" data-style="cinema"><span class="style-emoji">🎬</span><span class="style-name">Cinéma</span></div>
+</div>
+</div></div>
+</div>
+
+<!-- ÉTAPE 3 : PROMPT -->
+<div class="section open" id="section-prompt">
+<div class="section-header" data-toggle="section-prompt">
+<span class="section-title">✍️ Votre histoire</span>
+<span class="chevron">▼</span>
+</div>
+<div class="section-body"><div class="section-content">
+<textarea id="prompt-input" placeholder="Décrivez l'ambiance et l'histoire. Ex : Un chaton samouraï traverse une forêt de bambous au coucher du soleil. Il rencontre un esprit renard qui lui montre le chemin. Ambiance poétique et mélancolique."></textarea>
+<div class="hint" style="margin-top:.3rem;">💡 Plus votre prompt est évocateur, plus les scènes seront cohérentes.</div>
+</div></div>
+</div>
+
+<!-- ÉTAPE 4 : PARAMÈTRES -->
+<div class="section" id="section-settings">
+<div class="section-header" data-toggle="section-settings">
+<span class="section-title">⚙️ Paramètres</span>
+<span class="chevron">▼</span>
+</div>
+<div class="section-body"><div class="section-content">
+<div class="row">
+<label class="label">Nombre de scènes</label>
+<select id="scene-count">
+<option value="3">3 scènes (court)</option>
+<option value="4" selected>4 scènes (recommandé)</option>
+<option value="5">5 scènes (long)</option>
+</select>
+</div>
+<div class="row">
+<label class="label">Durée par scène</label>
+<select id="scene-duration">
+<option value="121">5 secondes</option>
+<option value="145" selected>6 secondes</option>
+<option value="169">7 secondes</option>
+</select>
+</div>
+</div></div>
+</div>
+
+<!-- BOUTON GÉNÉRATION -->
+<button type="button" class="btn btn-primary" id="generate-btn" disabled>🎬 Créer le court-métrage</button>
+<button type="button" class="btn btn-stop" id="stop-btn">⏹ Arrêter</button>
+
+<!-- SCÈNES GÉNÉRÉES -->
+<div class="section hidden" id="section-scenes">
+<div class="section-header" data-toggle="section-scenes">
+<span class="section-title">🎞️ Scènes <span class="badge" id="scenes-badge">0</span></span>
+<span class="chevron">▼</span>
+</div>
+<div class="section-body"><div class="section-content">
+<div class="scene-list" id="scene-list"></div>
+<button type="button" class="btn" id="play-film-btn" disabled style="margin-top:.8rem;">▶ Lire le court-métrage</button>
+</div></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toast-icon">✓</span><span id="toast-text">Message</span></div>
+
+<!-- STATUS BAR -->
+<div class="status-bar" id="status-bar"><div class="spinner"></div><span id="status-text">Préparation…</span></div>
+
+<!-- DEBUG PANEL -->
+<div class="debug-panel" id="debug-panel">
+<div class="debug-header" id="debug-header">
+<div class="debug-title">🖥️ Console</div>
+<div class="debug-actions">
+<button type="button" id="debug-clear-btn">Effacer</button>
+<button type="button" id="debug-collapse-btn">−</button>
+</div>
+</div>
+<div class="debug-body" id="debug-body"></div>
+</div>
+
+<!-- PLAYER OVERLAY -->
+<div class="player-overlay" id="player-overlay">
+<canvas id="player-canvas"></canvas>
+<div class="player-hint hidden" id="player-hint-overlay">Toucher pour quitter</div>
+</div>
+
+<script>
+// ==================== CONFIG ====================
+const API_BASE = 'https://apihub.agnes-ai.com/v1';
+const POLL_BASE = 'https://apihub.agnes-ai.com/agnesapi';
+const MODEL_TEXT = 'agnes-2.5-flash';
+const MODEL_IMAGE = 'agnes-image-2.1-flash';
+const MODEL_VIDEO = 'agnes-video-2.5-flash';
+const FRAME_RATE = 24;
+const API_KEY_STORAGE = 'serie_studio_key_v1';
+
+const VIDEO_FIRST_POLL_DELAY = 60;
+const VIDEO_POLL_INTERVALS = [8,8,12,12,20,20,25];
+const VIDEO_MAX_POLL = 100;
+
+const STYLES = {
+  anime: { name:'Animé', prompt:'Studio Ghibli anime style, hand-painted watercolor backgrounds, soft warm lighting, lush nature, gentle heroism, Hayao Miyazaki aesthetic' },
+  manga: { name:'Manga', prompt:'Japanese manga style, stark ink outlines, dramatic screentones, high contrast black and white with selective color accents, dynamic composition' },
+  cinema: { name:'Cinéma', prompt:'Cinematic 35mm film, anamorphic lens, dramatic lighting, shallow depth of field, film grain, professional color grading, movie-like atmosphere' }
+};
+
+// ==================== STATE ====================
+const state = {
+  apiKey:'',
+  refImage:null,
+  style:'anime',
+  prompt:'',
+  sceneCount:4,
+  durationFrames:145,
+  scenes:[],
+  isRunning:false,
+  stopRequested:false,
+  isPlayingFilm:false,
+  playRAF:null
+};
+
+// ==================== UTILS ====================
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+function setStatus(t){const b=document.getElementById('status-bar');const x=document.getElementById('status-text');if(!b||!x)return;if(t){b.classList.add('visible');x.textContent=t}else b.classList.remove('visible')}
+
+let toastTimer=null;
+function showToast(msg,type='success',dur=2500){
+  const t=document.getElementById('toast');const i=document.getElementById('toast-icon');const x=document.getElementById('toast-text');
+  if(!t||!i||!x)return;
+  t.classList.remove('visible','success','error','warn');void t.offsetWidth;
+  const icons={success:'✓',error:'✕',warn:'⚠'};i.textContent=icons[type]||'✓';x.textContent=msg;
+  t.classList.add(type);requestAnimationFrame(()=>t.classList.add('visible'));
+  if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('visible'),dur);
+}
+
+// ==================== DEBUG ====================
+function debugLog(level,cat,msg){
+  const body=document.getElementById('debug-body');
+  if(!body)return;
+  const time=new Date().toLocaleTimeString('fr-FR',{hour12:false});
+  const entry=document.createElement('div');
+  entry.className='debug-entry '+level;
+  entry.innerHTML='<span class="debug-time">'+time+'</span><span class="debug-cat">['+esc(cat)+']</span>'+esc(msg);
+  body.appendChild(entry);
+  body.scrollTop=body.scrollHeight;
+  while(body.children.length>200)body.removeChild(body.firstChild);
+}
+function clearDebug(){const b=document.getElementById('debug-body');if(b)b.innerHTML=''}
+function toggleDebug(){
+  const p=document.getElementById('debug-panel');const b=document.getElementById('debug-collapse-btn');
+  if(!p||!b)return;
+  p.classList.toggle('collapsed');
+  b.textContent=p.classList.contains('collapsed')?'+':'−';
+}
+
+// ==================== API KEY ====================
+function getKey(){try{return(localStorage.getItem(API_KEY_STORAGE)||'').trim()}catch(e){return''}}
+function saveKey(){
+  const input=document.getElementById('api-key-input');if(!input)return;
+  const k=input.value.trim();
+  if(!k){try{localStorage.removeItem(API_KEY_STORAGE)}catch(e){}updateApiPanel();showToast('Clé supprimée','warn');return}
+  if(!k.startsWith('sk-')){if(!confirm('La clé ne commence pas par "sk-". Sauvegarder ?'))return}
+  try{localStorage.setItem(API_KEY_STORAGE,k);updateApiPanel();showToast('Clé enregistrée ✓','success');debugLog('success','API','Clé : '+k.slice(0,8)+'…'+k.slice(-4));input.blur()}catch(e){showToast('Erreur','error')}
+}
+function updateApiPanel(){
+  const panel=document.getElementById('api-panel');const input=document.getElementById('api-key-input');
+  const line=document.getElementById('api-status-line');const text=document.getElementById('api-status-text');
+  if(!panel||!input||!line||!text)return;
+  const k=getKey();state.apiKey=k;
+  if(k){panel.classList.add('ok');line.classList.add('ok');text.textContent='Clé active · '+k.slice(0,8)+'…'+k.slice(-4);input.value=k;input.placeholder=''}
+  else{panel.classList.remove('ok');line.classList.remove('ok');text.textContent='Aucune clé enregistrée';input.value='';input.placeholder='sk-...'}
+  updateButtons();
+}
+
+// ==================== UI ====================
+function updateButtons(){
+  const gen=document.getElementById('generate-btn');
+  const play=document.getElementById('play-film-btn');
+  const stop=document.getElementById('stop-btn');
+  const hasKey=!!state.apiKey;
+  const hasRef=!!state.refImage;
+  const hasPrompt=state.prompt.trim().length>5;
+  const hasScenes=state.scenes.filter(s=>s.status==='done'&&s.url).length>0;
+  if(gen){
+    gen.disabled=!hasKey||!hasRef||!hasPrompt||state.isRunning;
+    if(state.isRunning)gen.textContent='⏳ Génération…';
+    else if(!hasKey)gen.textContent='🔑 Ajoutez une clé API';
+    else if(!hasRef)gen.textContent='🖼️ Ajoutez une image';
+    else if(!hasPrompt)gen.textContent='✍️ Décrivez votre histoire';
+    else gen.textContent='🎬 Créer le court-métrage';
+  }
+  if(play)play.disabled=!hasScenes||state.isPlayingFilm||state.isRunning;
+  if(stop)stop.classList.toggle('visible',state.isRunning);
+}
+
+function renderStyleGrid(){
+  const grid=document.getElementById('style-grid');if(!grid)return;
+  grid.querySelectorAll('.style-card').forEach(c=>{
+    c.classList.toggle('selected',c.dataset.style===state.style);
+  });
+}
+
+function renderRefPreview(){
+  const drop=document.getElementById('ref-drop');if(!drop)return;
+  if(state.refImage){
+    drop.classList.add('has-image');
+    drop.innerHTML='<div class="ref-preview"><img src="'+state.refImage+'" alt="Référence"><button type="button" class="ref-remove" id="ref-remove-btn">✕</button></div>';
+    document.getElementById('ref-remove-btn').addEventListener('click',(e)=>{
+      e.stopPropagation();state.refImage=null;renderRefPreview();updateButtons();
+    });
+  }else{
+    drop.classList.remove('has-image');
+    drop.innerHTML='<input type="file" accept="image/*" id="ref-image-input"><div class="ref-icon">📷</div><div class="ref-text"><strong>Choisir une image</strong><br>Personnage, décor ou photo de départ</div><div class="ref-hint">Cette image sera la première scène.</div>';
+    bindRefInput();
+  }
+}
+
+function bindRefInput(){
+  const input=document.getElementById('ref-image-input');if(!input)return;
+  input.addEventListener('change',async(e)=>{
+    const f=e.target.files&&e.target.files[0];if(!f)return;
+    if(!f.type.startsWith('image/')){showToast('Fichier non image','error');return}
+    if(f.size>10*1024*1024){showToast('Image trop lourde (max 10 Mo)','error');return}
+    try{
+      const raw=await fileToDataUri(f);
+      const compressed=await compressImage(raw,1024);
+      state.refImage=compressed;
+      renderRefPreview();
+      updateButtons();
+      showToast('Image chargée ✓','success');
+    }catch(err){showToast('Erreur lecture','error')}
+  });
+}
+
+function renderScenes(){
+  const list=document.getElementById('scene-list');if(!list)return;
+  if(state.scenes.length===0){list.innerHTML='';return}
+  list.innerHTML=state.scenes.map((s,i)=>{
+    let cls='scene-card', statusIcon='';
+    if(s.status==='generating'){cls+=' generating';statusIcon='<span class="spinner-mini"></span>'}
+    else if(s.status==='done'){cls+=' done';statusIcon='<span style="color:var(--ok)">✓</span>'}
+    else if(s.status==='error'){cls+=' error';statusIcon='<span style="color:var(--err)">✕</span>'}
+    let body='';
+    if(s.status==='done'&&s.url){
+      body='<video src="'+s.url+'" controls playsinline preload="metadata"></video>';
+    }else if(s.status==='error'){
+      body='<div class="scene-placeholder" style="color:var(--err)">'+esc(s.error||'Erreur')+'</div>';
+    }else{
+      body='<div class="scene-placeholder"><div class="spinner-mini"></div><span>'+esc(s.progress||'En attente…')+'</span></div>';
+    }
+    return '<div class="'+cls+'"><div class="scene-header"><span>Scène '+(i+1)+' / '+state.scenes.length+'</span>'+statusIcon+'</div><div class="scene-body">'+body+'</div></div>';
+  }).join('');
+  document.getElementById('scenes-badge').textContent=state.scenes.filter(s=>s.status==='done').length+'/'+state.scenes.length;
+  updateButtons();
+}
+
+// ==================== IMAGE UTILS ====================
+function fileToDataUri(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=()=>rej(new Error('Erreur lecture'));r.readAsDataURL(file)})}
+async function compressImage(dataUrl,maxSide){
+  return new Promise((resolve)=>{
+    const img=new Image();
+    img.onload=()=>{
+      let{width,height}=img;
+      const scale=Math.min(1,maxSide/Math.max(width,height));
+      width=Math.round(width*scale);height=Math.round(height*scale);
+      const c=document.createElement('canvas');c.width=width;c.height=height;
+      c.getContext('2d').drawImage(img,0,0,width,height);
+      resolve(c.toDataURL('image/jpeg',0.88));
+    };
+    img.onerror=()=>resolve(dataUrl);
+    img.src=dataUrl;
+  });
+}
+
+// ==================== API FETCH ====================
+async function apiFetch(url,options,label,maxAttempts){
+  options=options||{};label=label||'API';maxAttempts=maxAttempts||5;
+  let lastErr=null;
+  for(let attempt=0;attempt<maxAttempts;attempt++){
+    if(state.stopRequested)throw new Error('Arrêt demandé');
+    const key=getKey();
+    if(!key)throw new Error('Pas de clé API');
+    const headers=Object.assign({},options.headers||{},{'Authorization':'Bearer '+key});
+    const finalOptions=Object.assign({},options,{headers});
+    try{
+      const res=await fetch(url,finalOptions);
+      if(res.ok)return res;
+      let errText='';
+      try{errText=(await res.clone().text()).
